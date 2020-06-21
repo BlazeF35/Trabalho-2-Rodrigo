@@ -1,0 +1,36 @@
+.font{
+    font: 20px Fantasy;
+}
+
+p{
+    text-align: left;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    min-height: 10vh;
+    color: red;
+}
+
+h1{
+    text-align: left;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    color: red;
+}
+
+h2{
+    text-align: left;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.borda_texto{
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: black;
+    font-size: 20px; color: yellow;
+}
+
+.borda_texto2{
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: black;
+    font-size: 40px; color: yellow;
+}

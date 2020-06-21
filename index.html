@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="-8" />
+       
+        <link href="estilo.css" rel="stylesheet">
+       
+        <title>The Run R2D2</title>
+       
+        <script src ="Sprites.js"> </script>
+       
+       <style>
+            canvas{
+                position: absolute;
+                top: 0px;
+                bottom: 0pc;
+                left: 0px;
+                right: 0px;
+                margin: auto;
+            }
+        </style>
+    </head>
+    
+    <body>
+
+    <div class = "font">
+
+        <h1 class="borda_texto2">
+            Bem vindo a uma <br> galáxia muito <br> distante!
+        </h1>
+        
+        <p class="borda_texto">
+            Ajude o R2D2 ultrapassar 100 obstáculos,<br> entregar os planos do império ao seu <br> amigo Luke
+            antes que Darth Vader consiga <br> impedí-lo!
+        </p>
+    </div>
+
+    <div class="font">
+        <h2>
+            Como jogar:<br>
+        </h2>
+        <p>
+            1. Clique em "Start" para começar o game!<br>
+        <br>2. Clique na tela para pular!<br>
+        <br>3. Caso perca ou atinja 100 pontos clique <br> na tela novamente para resetar o game!<br> 
+        <br>4. Atenção você só tem 3 vidas, quando <br> acabarem é gameover!<br>
+        </p>
+       
+    </div>
+
+        <script>
+            var canvas, ctx, ALTURA, LARGURA, frames = 0, maxPulo = 2, velocidade = 12,
+            estadoAtual, melhores, img,
+
+            estados = {
+                jogar: 0,
+                jogando: 1,
+                perdeuJogo: 2,
+                venceuJogo: 3,
+            },
+
+            chao = {
+                y: 550,
+                altura: 50,
+                cor: "#ffdf70",
+
+                cenario: function() {
+                    ctx.fillStyle = this.cor
+                    ctx.fillRect(0, this.y, LARGURA, this.altura);
+                }
+            },
+
+            personagem = {
+                x: 50,
+                y: 0,
+                altura: R2D2.altura,
+                largura: R2D2.altura,
+                cor: "#ff4e4e",
+                gravidade: 1.5,
+                velocidade: 1,
+                forcaPulo: 20,
+                qntdPulo: 0,
+                pontos: 0,
+                vida: 3,
+                colidindo: false,
+
+                atualiza: function() {
+                    this.velocidade += this.gravidade;
+                    this.y += this.velocidade; 
+                   
+                   if(this.y > chao.y - this.altura && estadoAtual != estados.perdeuJogo){
+                       this.y = chao.y - this.altura; 
+                       this.qntdPulo = 0;
+                       this.velocidade = 0;
+                   }
+                },
+
+                pula: function() {
+                    if(this.qntdPulo < maxPulo){
+                    this.velocidade = -this.forcaPulo;
+                    this.qntdPulo++
+                    }
+                },
+
+                reset: function() {
+                    this.velocidade = 0;
+                    this.y = 0;
+
+                    if(this.pontos > melhores){
+                        localStorage.setItem("melhores", this.pontos);
+                        melhores = this.pontos;
+                    }
+                    this.pontos = 0;
+                    this.vida = 3;
+                },
+
+
+                cenario: function(){
+                    R2D2.desenha(this.x, this.y);
+                }
+            },
+
+                barreiras = {
+                    _bar: [],
+                    cor: ["white"],
+                    tempoInsere: 0,
+
+                    insere: function() {
+                        this._bar.push({
+                            x: LARGURA,
+                            largura: 50,
+                            altura: 50 + Math.floor(120 * Math.random()),
+                        });
+
+                        this.tempoInsere = 40 + Math.floor(20 * Math.random());
+                    },
+
+                    atualiza: function() {
+
+                        if(this.tempoInsere == 0){
+                            this.insere();
+                        }else{
+                            this.tempoInsere--;
+                        }
+
+                        for(var i = 0, tam = this._bar.length; i < tam; i++){
+                            var bar = this._bar[i];
+
+                            bar.x -= velocidade;
+
+                            if(!personagem.colidindo && bar.x <= personagem.x + personagem.largura && personagem.x <= bar.x +
+                            bar.largura && chao.y - bar.altura <= personagem.y + personagem.altura){
+
+                                personagem.colidindo = true;
+
+                                setTimeout(function() {
+                                    personagem.colidindo = false;
+                                }, 500);
+
+                                if(personagem.vida >= 1){
+                                    personagem.vida--;
+                                }else{
+                                    estadoAtual = estados.perdeuJogo;
+                                }
+                               
+                            }else if(bar.x == 0){
+                                personagem.pontos++;
+                            }
+
+                            if(bar.x <= -bar.largura){
+                                this._bar.splice(i, 1);
+                                tam--;
+                                i--;
+                            }
+                        }
+                    },
+
+                    limpa: function(){
+                        this._bar = [];
+                    },
+
+                    cenario: function() {
+                        for(var i = 0, tam = this._bar.length; i < tam; i++){
+                            var bar = this._bar[i];
+                            ctx.fillStyle = bar.cor;
+                            ctx.fillRect(bar.x, chao.y - bar.altura, bar.largura, bar.altura);
+                        }
+                    }
+            };
+
+
+            function click(acao) {
+                if(estadoAtual == estados.jogando){
+                    personagem.pula();
+                }else if(estadoAtual == estados.jogar){
+                    estadoAtual = estados.jogando;
+                }else if(estadoAtual == estados.perdeuJogo && personagem.y >= 2 * ALTURA){
+                    estadoAtual = estados.jogar;
+                    barreiras.limpa();
+                    personagem.reset();
+                }
+                
+            }
+
+            function main() {
+                ALTURA = window.innerHeight;
+                LARGURA = window.innerHeight;
+
+                if(LARGURA >= 500){
+                    LARGURA = 600;
+                    ALTURA = 600;
+                } 
+
+                canvas = document.createElement("canvas");
+                canvas.width = LARGURA;
+                canvas.height = ALTURA;
+                canvas.style.border = "3px solid #000";
+
+                ctx = canvas.getContext("2d");
+                document.body.appendChild(canvas);
+
+                document.addEventListener("mousedown", click);
+
+                estadoAtual = estados.jogar;
+
+                melhores = localStorage.getItem("melhores");
+
+                if(melhores == null){
+                    melhores = 0;
+                }
+
+                img = new Image();
+                img.src = "Imagens/Game.png";
+
+                anda();
+
+            }
+            function anda() {
+                
+                atualiza();
+                cenario();
+
+                window.requestAnimationFrame(anda);
+            }
+            function atualiza() {
+                frames++;
+
+                personagem.atualiza();
+
+                if(estadoAtual == estados.jogando){
+                    barreiras.atualiza();
+                }
+
+            }
+            function cenario() {
+                bg.desenha(0,0);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "50px Fantasy";
+                ctx.fillText(personagem.pontos, 20, 50);
+                ctx.fillText(personagem.vida, 550, 50);
+
+                if(estadoAtual == estados.jogar){
+                    play.desenha(LARGURA / 2 - play.altura / 2, ALTURA / 2 - play.altura / 2);
+                    
+                }else if(estadoAtual == estados.perdeuJogo){
+                    perdeu.desenha(LARGURA / 2 - perdeu.largura / 2, ALTURA / 2 - perdeu.altura / 3);
+                    ctx.save();
+                    ctx.translate(LARGURA / 2, ALTURA / 4);
+                    ctx.fillStyle = "white";
+
+                    if(personagem.pontos > melhores){
+                        ctx.fillText("New Record", -120, -65);
+                    }else if(melhores < 10){
+                        ctx.fillText("High Score: " + melhores, -120, -65);
+                    }else if(melhores >= 10 && record < 100){
+                        ctx.fillText("High Score: " + melhores, -143, -65);
+                    }else if(melhores > 100){
+                        estadoAtual = estados.venceuJogo;
+                        venceu.desenha(LARGURA / 2 - perdeu.largura / 2, ALTURA / 2 - perdeu.altura / 3);
+                        ctx.save();
+                        ctx.translate(LARGURA / 2, ALTURA / 4);
+                        ctx.fillStyle = "white";
+                        ctx.fillText("Você venceu: " + melhores, -163, -65);
+                    }
+                    
+                    if(personagem.pontos < 10){
+                        ctx.fillText("Points: " + personagem.pontos, -63, 19);
+                    }else if(personagem.pontos >= 10 && personagem.pontos < 100){
+                        ctx.fillText(personagem.pontos, -26, 19);
+                    }
+                        
+                    ctx.restore();
+                   
+                }else if(estadoAtual == estados.jogando){
+                    barreiras.cenario();
+                }
+
+                chao.cenario();
+                personagem.cenario();
+            }
+
+            main();
+        </script>
+
+<audio src="Audio/Star Wars (Main Theme).mp3" autoplay loop></audio>
+
+</audio>
+
+    </body>
+</html>
